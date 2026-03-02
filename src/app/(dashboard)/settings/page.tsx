@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { authService } from '@/services/auth.service';
 import { Button } from '@/components/ui/button';
@@ -13,14 +13,36 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Loader2, Save, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 
+function getPasswordStrength(password: string): {
+    score: number;
+    label: string;
+    color: string;
+    barColor: string;
+} {
+    if (!password) return { score: 0, label: '', color: '', barColor: '' };
+
+    let score = 0;
+    if (password.length >= 8) score++;
+    if (password.length >= 12) score++;
+    if (/[A-Z]/.test(password) && /[a-z]/.test(password)) score++;
+    if (/\d/.test(password)) score++;
+    if (/[^A-Za-z0-9]/.test(password)) score++;
+
+    if (score <= 1) return { score: 1, label: 'Weak', color: 'text-red-400', barColor: 'bg-red-500' };
+    if (score === 2) return { score: 2, label: 'Fair', color: 'text-amber-400', barColor: 'bg-amber-500' };
+    if (score === 3 || score === 4) return { score: 3, label: 'Strong', color: 'text-emerald-400', barColor: 'bg-emerald-500' };
+    return { score: 4, label: 'Very Strong', color: 'text-cyan-400', barColor: 'bg-cyan-500' };
+}
+
 export default function SettingsPage() {
     const { user, refreshUser } = useAuth();
     const [name, setName] = useState(user?.name || '');
     const [saving, setSaving] = useState(false);
-    const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [changingPassword, setChangingPassword] = useState(false);
+
+    const strength = useMemo(() => getPasswordStrength(newPassword), [newPassword]);
 
     const handleSaveProfile = async () => {
         if (!user) return;
@@ -51,10 +73,9 @@ export default function SettingsPage() {
         try {
             await authService.updatePassword(newPassword);
             toast.success('Password changed successfully');
-            setCurrentPassword('');
             setNewPassword('');
             setConfirmPassword('');
-        } catch (error) {
+        } catch {
             toast.error('Failed to change password');
         } finally {
             setChangingPassword(false);
@@ -147,6 +168,25 @@ export default function SettingsPage() {
                                 required
                                 minLength={6}
                             />
+                            {/* Password strength indicator */}
+                            {newPassword.length > 0 && (
+                                <div className="space-y-1.5 pt-1">
+                                    <div className="flex gap-1">
+                                        {[1, 2, 3, 4].map((seg) => (
+                                            <div
+                                                key={seg}
+                                                className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${strength.score >= seg
+                                                        ? strength.barColor
+                                                        : 'bg-white/[0.06]'
+                                                    }`}
+                                            />
+                                        ))}
+                                    </div>
+                                    <p className={`text-xs font-medium ${strength.color}`}>
+                                        {strength.label}
+                                    </p>
+                                </div>
+                            )}
                         </div>
 
                         <div className="space-y-2">
@@ -155,15 +195,21 @@ export default function SettingsPage() {
                                 type="password"
                                 value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
-                                className="bg-white/[0.04] border-white/[0.08] text-white"
+                                className={`bg-white/[0.04] border-white/[0.08] text-white ${confirmPassword && confirmPassword !== newPassword
+                                        ? 'border-red-500/50 focus-visible:ring-red-500/30'
+                                        : ''
+                                    }`}
                                 placeholder="••••••••"
                                 required
                             />
+                            {confirmPassword && confirmPassword !== newPassword && (
+                                <p className="text-xs text-red-400">Passwords do not match</p>
+                            )}
                         </div>
 
                         <Button
                             type="submit"
-                            disabled={changingPassword || !newPassword}
+                            disabled={changingPassword || !newPassword || newPassword !== confirmPassword}
                             className="bg-blue-600 hover:bg-blue-500 text-white"
                         >
                             {changingPassword ? (

@@ -11,6 +11,13 @@ import {
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import type { DashboardStats, EmployeePerformance } from '@/types';
 
+function getGreeting() {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+}
+
 export default function DashboardPage() {
     const { user } = useAuth();
     const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -46,7 +53,7 @@ export default function DashboardPage() {
             {/* Welcome */}
             <div>
                 <h2 className="text-xl font-semibold text-white">
-                    Welcome back, {user?.name?.split(' ')[0]} 👋
+                    {getGreeting()}, {user?.name?.split(' ')[0]} 👋
                 </h2>
                 <p className="text-sm text-gray-400 mt-1">
                     Here&apos;s what&apos;s happening with your team today.

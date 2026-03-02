@@ -62,7 +62,12 @@ export default function AnnouncementsPage() {
     const [deleting, setDeleting] = useState(false);
 
     // Form state
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<{
+        title: string;
+        content: string;
+        priority: 'low' | 'normal' | 'high' | 'urgent';
+        is_pinned: boolean;
+    }>({
         title: '',
         content: '',
         priority: 'normal',
@@ -91,7 +96,7 @@ export default function AnnouncementsPage() {
 
     const openCreateForm = () => {
         setEditTarget(null);
-        setFormData({ title: '', content: '', priority: 'normal', is_pinned: false });
+        setFormData({ title: '', content: '', priority: 'normal' as const, is_pinned: false });
         setShowForm(true);
     };
 
@@ -304,7 +309,7 @@ export default function AnnouncementsPage() {
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label className="text-gray-300">Priority</Label>
-                                <Select value={formData.priority} onValueChange={(v) => setFormData({ ...formData, priority: v })}>
+                                <Select value={formData.priority} onValueChange={(v) => setFormData({ ...formData, priority: v as 'low' | 'normal' | 'high' | 'urgent' })}>
                                     <SelectTrigger className="bg-white/[0.04] border-white/[0.08] text-gray-300">
                                         <SelectValue />
                                     </SelectTrigger>
